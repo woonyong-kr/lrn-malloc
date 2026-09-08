@@ -20,5 +20,5 @@ test: setup
 	python3 scripts/run_traces.py
 benchmark: test
 demo: setup
-	$(BUILD)/trace-avl malloc-lab/short1-bal.rep --verbose
-	$(BUILD)/trace-list malloc-lab/short1-bal.rep --verbose
+	$(BUILD)/trace-avl malloc-lab/traces/short1-bal.rep --verbose
+	$(BUILD)/trace-list malloc-lab/traces/short1-bal.rep --verbose
