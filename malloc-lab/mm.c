@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <limits.h>
 
 #include "mm.h"
 #include "memlib.h"
@@ -470,7 +471,7 @@ void *mm_malloc(size_t size)
     size_t extendsize;
     void *bp;
 
-    if (size == 0)
+    if (size == 0 || size > INT_MAX - CHUNKSIZE - DSIZE)
         return NULL;
 
     asize = ALIGN(size + DSIZE);
@@ -492,6 +493,8 @@ void *mm_malloc(size_t size)
 
 void mm_free(void *ptr)
 {
+    if (ptr == NULL)
+        return;
     size_t size = GET_SIZE(HDRP(ptr));
 
     PUT(HDRP(ptr), PACK(size, 0));
@@ -514,6 +517,8 @@ void *mm_realloc(void *ptr, size_t size)
         mm_free(ptr);
         return NULL;
     }
+    if (size > INT_MAX - CHUNKSIZE - DSIZE)
+        return NULL;
 
     oldsize = GET_SIZE(HDRP(ptr));
 
@@ -558,4 +563,11 @@ void *mm_realloc(void *ptr, size_t size)
     memcpy(newptr, ptr, oldsize - DSIZE);
     mm_free(ptr);
     return newptr;
+}
+
+void mm_dump(FILE *out)
+{
+    for (char *bp = NEXT_BLKP(heap_listp); GET_SIZE(HDRP(bp)); bp = NEXT_BLKP(bp))
+        fprintf(out, "  offset=%zu block=%u %s\n", (size_t)(bp - (char *)mem_heap_lo()),
+                GET_SIZE(HDRP(bp)), GET_ALLOC(HDRP(bp)) ? "used" : "free");
 }
