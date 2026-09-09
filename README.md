@@ -1,6 +1,6 @@
 # lrn-malloc
 
-제한된 힙을 관리하는 메모리 할당 엔진. 핵심 엔진을 실제 입력으로 실행하고 결과와 내부 동작을 확인하는 독립 프로그램이다.
+제한된 힙에서 빈 블록을 찾아 할당하고, 해제된 이웃 블록을 합쳐 다시 쓰는 C 메모리 할당기다. 같은 요청을 AVL 기반 할당기와 first-fit free list에 넣어 데이터 보존, 단편화, 처리량의 차이를 비교한다.
 
 ## 실행
 
@@ -8,7 +8,6 @@ macOS/Linux의 C compiler·make·Python 3가 필요하다.
 
 ```sh
 make setup
-make test
 make demo
 # 다른 유효한 CS:APP trace를 직접 재생
 .build/trace-avl malloc-lab/traces/random2-bal.rep
@@ -25,13 +24,15 @@ trace runner는 할당한 실제 메모리에 패턴을 채우고 해제·재할
 
 `make test`는 6개 대표 balanced trace와 seed 731의 혼합 stress를 두 엔진에 적용한다. `.build/results.json`에 결과를 쓴다. 정확성 실행과 throughput 측정은 분리한다. 최소 20회, 누적 allocator 실행 30ms 이상을 목표로 반복하며 최대 100,000회다. throughput은 trace 해석·검증 비용을 제외한 재생 속도다. 이용률은 peak requested payload / final heap bytes다.
 
-구현을 읽는 순서: `malloc-lab/mm.c`, `malloc-lab/baseline.c`, `scripts/trace_runner.c`.
+AVL 할당기는 [`mm.c`](malloc-lab/mm.c), 비교할 free list는 [`baseline.c`](malloc-lab/baseline.c), 실제 메모리에 패턴을 쓰고 확인하는 재생기는 [`trace_runner.c`](scripts/trace_runner.c)에 있다.
 
 ## 검증과 관찰
 
-6개 대표 trace와 deterministic mixed stress를 두 구현에서 검증한다. NULL·0·SIZE_MAX와 realloc 데이터 보존을 별도 C 계약 테스트로 확인한다.
+```sh
+make test
+```
 
-실행 환경·명령·exit code·원본 백업과 전체 결과는 이번 전환의 별도 작업 폴더에 기록한다. 새 기계에서는 같은 명령으로 직접 재검증한다. 수치가 기록되어 있다는 사실과 현재 실행 성공을 구분한다.
+대표 trace와 seed가 고정된 혼합 요청을 두 구현에 적용하고, NULL·0·SIZE_MAX와 realloc의 데이터 보존을 검사한다. `make demo`는 각 요청 뒤의 블록 offset·크기·사용 여부를 출력하므로 분할·병합·재사용을 따라갈 수 있다. 끝의 JSON에서 `verified: true`, 요청한 최대 payload, 최종 힙 크기와 처리량을 확인한다.
 
 ## 지원 범위와 한계
 
@@ -43,4 +44,4 @@ free list baseline은 선형 탐색·이전 block 탐색, AVL은 복잡한 index
 
 [woonyong-kr/SW_AI-W07-malloc-lab](https://github.com/woonyong-kr/SW_AI-W07-malloc-lab)에서 이어 받은 학습용 파생본이다. 기준 원본 revision은 `2a1cbe7fbc771824d55ad4816714610409fcd437`이다. 원본 과제·팀 코드와 이후 개인 확장을 구분하며, 개별 기여는 Git author와 diff로 확인한다. 기존 저작권 표시는 소스에 유지한다.
 
-과거 문서·실험·기여 기록은 [정리 전 이력](https://github.com/woonyong-kr/lrn-malloc/tree/24c2cc836b519985e3163b2acdf6d409543e4410)에서 확인할 수 있다. 실행법과 지원 계약은 이 README에 모았다. 개념·설계·실험 해석 자료는 개인 WIKI inbox에서 검토한 뒤 기존 정본에 흡수한다.
+AVL 구현을 이어받아 비교용 free list와 trace 재생 경로를 추가했다. 과제 자료와 기존 할당 전략의 기록은 [정리 전 이력](https://github.com/woonyong-kr/lrn-malloc/tree/24c2cc836b519985e3163b2acdf6d409543e4410)에 남아 있다.
